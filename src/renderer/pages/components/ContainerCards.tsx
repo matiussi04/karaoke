@@ -1,0 +1,37 @@
+import { Box } from '@mui/material';
+import React, { ReactNode } from 'react';
+
+interface Props {
+  width: number | string;
+  height: number | string;
+  children: ReactNode;
+  isSelected: boolean;
+  innerRef: React.Ref<HTMLElement>;
+}
+
+export default function ContainerCards({
+  children,
+  width,
+  height,
+  isSelected,
+  innerRef,
+}: Props) {
+  return (
+    <Box
+      sx={{
+        width,
+        height,
+        overflowY: 'hidden',
+        marginRight: 5,
+        marginLeft: 5,
+        borderRadius: 8,
+        outline: isSelected ? '5px solid red' : 'none',
+        padding: 3,
+        background: '#fff',
+      }}
+      ref={innerRef}
+    >
+      {children}
+    </Box>
+  );
+}
