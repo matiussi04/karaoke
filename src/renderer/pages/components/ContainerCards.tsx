@@ -6,7 +6,6 @@ interface Props {
   height: number | string;
   children: ReactNode;
   isSelected: boolean;
-  innerRef: React.Ref<HTMLElement>;
 }
 
 export default function ContainerCards({
@@ -14,7 +13,6 @@ export default function ContainerCards({
   width,
   height,
   isSelected,
-  innerRef,
 }: Props) {
   return (
     <Box
@@ -24,12 +22,11 @@ export default function ContainerCards({
         overflowY: 'hidden',
         marginRight: 5,
         marginLeft: 5,
-        borderRadius: 8,
+        borderRadius: 2,
         outline: isSelected ? '5px solid red' : 'none',
         padding: 3,
         background: '#fff',
       }}
-      ref={innerRef}
     >
       {children}
     </Box>

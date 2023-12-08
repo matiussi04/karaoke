@@ -24,7 +24,7 @@ export default function MusicCard({
       sx={{
         display: 'flex',
         borderRadius: 0,
-        outline: isSelected ? '5px solid red' : 'none',
+        color: isSelected ? 'red' : 'black',
         boxShadow: 'none',
       }}
       ref={innerRef}

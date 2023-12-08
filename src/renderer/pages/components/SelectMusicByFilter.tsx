@@ -1,5 +1,5 @@
 import { MusicInterface } from 'interfaces/musicInterfaces';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { CircularProgress } from '@mui/material';
 import { getAllMusics } from '../api';
 import MusicCard from './MusicCard';
@@ -14,11 +14,11 @@ interface Props {
 export default function SelectMusicByFilter({ filters }: Props) {
   const [musics, setMusics] = useState<MusicInterface[]>();
   const [selected, setSelected] = useState<'music' | 'filter'>('music');
-  const [event, setEvent] = useState<boolean>(false);
   const [musicIndex, setMusicIndex] = useState(0);
-  const innerRef = useRef(null);
-  const innerRef2 = useRef(null);
-  const selectMusic = useRef(null);
+  const songRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [filterIndex, setFilterIndex] = useState(0);
+  const [debounceTimeoutId, setDebounceTimeoutId] =
+    useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     getAllMusics((arg) => {
@@ -28,52 +28,62 @@ export default function SelectMusicByFilter({ filters }: Props) {
     });
   }, []);
 
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (debounceTimeoutId) {
+        clearTimeout(debounceTimeoutId);
+      }
+      setDebounceTimeoutId(
+        setTimeout(() => {
+          if (event.key === 'ArrowDown') {
+            if (selected === 'music') {
+              setMusicIndex((prevIndex) =>
+                prevIndex < musics.length - 1 ? prevIndex + 1 : prevIndex
+              );
+            } else {
+              setFilterIndex((prevIndex) =>
+                prevIndex < filters.length - 1 ? prevIndex + 1 : prevIndex
+              );
+            }
+          } else if (event.key === 'ArrowUp') {
+            if (selected === 'music') {
+              setMusicIndex((prevIndex) =>
+                prevIndex > 0 ? prevIndex - 1 : prevIndex
+              );
+            } else {
+              setFilterIndex((prevIndex) =>
+                prevIndex > 0 ? prevIndex - 1 : prevIndex
+              );
+            }
+          } else if (event.key === 'j') {
+            setSelected((prevSelected) =>
+              prevSelected === 'music' ? 'filter' : 'music'
+            );
+          }
+        }, 190)
+      );
+    },
+    [musics, filters]
+  );
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleKeyDown, musicIndex]);
+
+  useEffect(() => {
+    songRefs.current[musicIndex]?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'nearest',
+    });
+  }, [musicIndex]);
+
   if (!musics) {
     return <CircularProgress />;
   }
-
-  function checkVisible(
-    listElement: HTMLElement | null,
-    selectedItem: HTMLElement | null
-  ) {
-    if (listElement && selectedItem) {
-      const selectedItemTop = selectedItem.offsetTop;
-      const selectedItemBottom =
-        selectedItem.offsetTop + selectedItem.offsetHeight;
-
-      const { scrollTop } = listElement;
-      const scrollBottom = scrollTop + listElement.offsetHeight;
-
-      // Se o item estiver fora da área visível na parte de cima, faz o scroll para cima
-      if (selectedItemTop < scrollTop) {
-        selectedItem.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-      // Se o item estiver fora da área visível na parte de baixo, faz o scroll para baixo
-      else if (selectedItemBottom > scrollBottom) {
-        selectedItem.scrollIntoView({ behavior: 'smooth', block: 'end' });
-      }
-    }
-  }
-
-  const handleKeyPress = (e: any) => {
-    if (e.key === 'w') {
-      setMusicIndex((prevIndex) => (prevIndex > 0 ? prevIndex - 1 : prevIndex));
-    } else if (e.key === 's') {
-      setMusicIndex((prevIndex) =>
-        prevIndex < musics.length - 1 ? prevIndex + 1 : prevIndex
-      );
-    }
-    if (e.key === 'j') {
-      setSelected((value) => (value === 'music' ? 'filter' : 'music'));
-    }
-  };
-
-  if (!event) {
-    setEvent(true);
-    document.addEventListener('keydown', handleKeyPress);
-  }
-
-  checkVisible(innerRef.current, selectMusic.current);
 
   return (
     <ContainerMain>
@@ -81,7 +91,6 @@ export default function SelectMusicByFilter({ filters }: Props) {
         width={900}
         height={500}
         isSelected={selected === 'music'}
-        innerRef={innerRef}
       >
         {musics.map((music, index) => (
           <MusicCard
@@ -89,21 +98,20 @@ export default function SelectMusicByFilter({ filters }: Props) {
             artist={music.artist}
             key={music.id}
             isSelected={index === musicIndex && selected === 'music'}
-            innerRef={index === musicIndex ? selectMusic : null}
+            innerRef={(ref) => (songRefs.current[index] = ref)}
           />
         ))}
       </ContainerCards>
       <ContainerCards
         width={500}
         height={500}
-        innerRef={innerRef2}
         isSelected={selected === 'filter'}
       >
         {filters.map((filter, index) => (
           <FilterCard
             filterName={filter}
             key={filter}
-            isSelected={index === musicIndex && selected === 'filter'}
+            isSelected={index === filterIndex && selected === 'filter'}
           />
         ))}
       </ContainerCards>

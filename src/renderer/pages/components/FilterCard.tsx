@@ -22,7 +22,7 @@ export default function FilterCard({
       sx={{
         display: 'flex',
         borderRadius: 0,
-        outline: isSelected ? '5px solid red' : 0,
+        color: isSelected ? 'red' : 'black',
         boxShadow: 'none',
       }}
     >

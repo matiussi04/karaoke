@@ -1,17 +1,10 @@
 /* eslint global-require: off, no-console: off, promise/always-return: off */
 
-/**
- * This module executes inside of electron's main process. You can start
- * electron renderer process from here and communicate with the other processes
- * through IPC.
- *
- * When running `npm run build` or `npm run build:main`, this file is compiled to
- * `./src/main.js` using webpack. This gives us some performance wins.
- */
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
+import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
+import downloadFolder from '../drive-api';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import {
@@ -107,7 +100,35 @@ const createWindow = async () => {
 
   mainWindow.loadURL(resolveHtmlPath('index.html'));
 
-  mainWindow.on('ready-to-show', () => {
+  mainWindow.on('ready-to-show', async () => {
+    if (!mainWindow) {
+      throw new Error('"mainWindow" is not defined');
+    }
+
+    const downloadConfirmation = await dialog.showMessageBox(mainWindow, {
+      type: 'question',
+      buttons: ['Sim', 'Não'],
+      title: 'Download de Músicas',
+      message: 'Deseja baixar as músicas ao iniciar a aplicação?',
+    });
+
+    if (downloadConfirmation.response === 0) {
+      const musicasFolderId: string = '1N5-CeS6veSh8eP0Px2FNu-V6xbMWrEc4';
+      downloadFolder(
+        musicasFolderId,
+        path.join(process.cwd(), 'assets', 'music')
+      )
+        // eslint-disable-next-line promise/always-return
+        .then(() => {
+          console.log(
+            `Folder with ID ${musicasFolderId} downloaded successfully.`
+          );
+        })
+        .catch((err: Error) => {
+          console.error('Error downloading folder:', err);
+        });
+    }
+
     if (!mainWindow) {
       throw new Error('"mainWindow" is not defined');
     }
@@ -159,3 +180,5 @@ app
     });
   })
   .catch(console.log);
+
+// ...
